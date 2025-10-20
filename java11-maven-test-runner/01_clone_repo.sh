@@ -35,7 +35,7 @@ echo "==============================================="
 
 # Exibe o último commit em um formato legível
 echo "Detalhes do Último Commit:"
-git log -1 --pretty=format:"  - Hash: %H%n  - Autor: %an <%ae>%n  - Data: %ad%n  - Mensagem: %s" --date=format:'%Y-%m-%d %H:%M:%S'
+git log -1 --pretty=format:"  - Hash: %H%n  - Autor: %an <%ae>%n  - Data: %ad%n  - Mensagem: %s%n" --date=format:'%Y-%m-%d %H:%M:%S'
 
 echo "==============================================="
 echo "| Clone e Validação Concluídos"
