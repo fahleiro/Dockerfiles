@@ -1,3 +1,4 @@
+# Usa a imagem oficial OpenJDK 11 slim como base.
 FROM openjdk:11-jdk-slim
 
 # Evitar prompts interativos durante a instalação
@@ -6,7 +7,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 # O diretório de trabalho padrão.
 WORKDIR /workspace
 
-# O JAVA_HOME já está configurado na imagem base.
 # Instalar dependências necessárias: git para clonagem e maven para build.
 RUN apt-get update && \
     apt-get install -y \
@@ -18,27 +18,32 @@ RUN apt-get update && \
     # Limpar o cache do apt para reduzir o tamanho da imagem (Prática importante)
     rm -rf /var/lib/apt/lists/*
 
-# Verificar instalações (Java já deve estar OK, mas verificamos git e mvn)
-# O comando java -version deve funcionar, mas o PATH/JAVA_HOME é configurado pela imagem base.
+# Verificar instalações (Java, Maven e Git)
 RUN java -version && mvn -version && git --version
 
 # ----------------------------------------------------------------------
-# Adicionando a funcionalidade: Script de Clone
+# Adicionando a funcionalidade: Orquestração de Scripts
+# Copia TUDO do diretório atual (incluindo start.sh, 01_clone_repo.sh, 02_run_test.sh)
 # ----------------------------------------------------------------------
 
-# Adiciona o script de execução ao contêiner
-# Certifique-se que o 01_clone_repo.sh esteja no mesmo diretório!
-COPY 01_clone_repo.sh /usr/local/bin/01_clone_repo.sh
+# Copia todos os arquivos da pasta atual do host para o WORKDIR /workspace
+COPY . /workspace/
 
-# Garante que o script é executável
-RUN chmod +x /usr/local/bin/01_clone_repo.sh
+# Move os scripts para um local onde eles possam ser chamados de qualquer lugar e
+# garante que todos são executáveis.
+RUN mv /workspace/start.sh /usr/local/bin/start.sh && \
+    mv /workspace/01_clone_repo.sh /usr/local/bin/01_clone_repo.sh && \
+    mv /workspace/02_run_test.sh /usr/local/bin/02_run_test.sh && \
+    chmod +x /usr/local/bin/*.sh
 
 # ----------------------------------------------------------------------
 # Configurando o ENTRYPOINT e CMD
 # ----------------------------------------------------------------------
 
-# Define o ENTRYPOINT como o script de clone.
-ENTRYPOINT ["/usr/local/bin/01_clone_repo.sh"]
+# Define o ENTRYPOINT como o script de orquestração.
+ENTRYPOINT ["/usr/local/bin/start.sh"]
 
-# CMD (comando padrão) para flexibilidade (acesso ao shell)
+# CMD (comando padrão) para flexibilidade.
+# Se o usuário rodar sem a CLONE_URL, o start.sh vai falhar.
+# Se o usuário usar 'docker run --entrypoint /bin/bash', ele terá acesso ao shell.
 CMD ["/bin/bash"]
